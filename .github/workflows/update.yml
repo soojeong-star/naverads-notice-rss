@@ -9,8 +9,8 @@ on:
   schedule:
     # UTC: Sun-Thu 23:47 = Mon-Fri 08:47 Korea
     - cron: '47 23 * * 0-4'
-    # UTC: Mon-Fri 00:47-08:47 = Mon-Fri 09:47-17:47 Korea
-    - cron: '47 0-8 * * 1-5'
+    # UTC: Mon-Fri 00:47-08:47 = Mon-Fri 09:47-18:47 Korea
+    - cron: '47 0-9 * * 1-5'
 permissions:
   contents: write
   pages: write
