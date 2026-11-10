@@ -1,0 +1,52 @@
+name: Update notice RSS
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - generate_rss.py
+      - .github/workflows/update.yml
+  schedule:
+    # UTC: Sun-Thu 23:47 = Mon-Fri 08:47 Korea
+    - cron: '47 23 * * 0-4'
+    # UTC: Mon-Fri 00:47-08:47 = Mon-Fri 09:47-17:47 Korea
+    - cron: '47 0-8 * * 1-5'
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: notice-rss
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Collect first page and generate RSS
+        run: python generate_rss.py
+      - name: Save newly discovered notice IDs
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/notices.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'Update discovered notice history'
+            git push origin HEAD:main
+          fi
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+      - name: Publish RSS
+        id: deployment
+        uses: actions/deploy-pages@v4
