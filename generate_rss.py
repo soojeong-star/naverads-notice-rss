@@ -3,7 +3,7 @@ import json
 import re
 import time
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from email.utils import format_datetime
 from html.parser import HTMLParser
 from pathlib import Path
@@ -21,6 +21,7 @@ class NoticeParser(HTMLParser):
         self.items = {}
         self.current = None
         self.in_title = False
+        self.in_date = False
         self.skip = 0
 
     def handle_starttag(self, tag, attrs):
@@ -28,18 +29,24 @@ class NoticeParser(HTMLParser):
         if tag == 'a':
             match = re.fullmatch(r'/notice/(\d+)(?:\?.*)?', attrs.get('href', ''))
             if match:
-                self.current = {'id': match[1], 'title': ''}
+                self.current = {'id': match[1], 'title': '', 'source_date': ''}
         if self.current is not None:
             if tag == 'p' and 'post_title' in attrs.get('class', '').split():
                 self.in_title = True
             if self.in_title and tag == 'span':
                 self.skip += 1
+            if tag == 'span' and 'date' in attrs.get('class', '').split():
+                self.in_date = True
 
     def handle_data(self, data):
         if self.current is not None and self.in_title and not self.skip:
             self.current['title'] += data
+        if self.current is not None and self.in_date:
+            self.current['source_date'] += data
 
     def handle_endtag(self, tag):
+        if tag == 'span':
+            self.in_date = False
         if tag == 'span' and self.skip:
             self.skip -= 1
         if tag == 'p':
@@ -48,10 +55,13 @@ class NoticeParser(HTMLParser):
             item = self.current
             item['title'] = ' '.join(item['title'].split())
             if item['title']:
+                item['source_date'] = item['source_date'].strip()
+                datetime.strptime(item['source_date'], '%Y-%m-%d')
                 item['url'] = f"{SOURCE}/{item['id']}"
                 self.items[item['id']] = item
             self.current = None
             self.in_title = False
+            self.in_date = False
             self.skip = 0
 
 
@@ -79,15 +89,24 @@ def write_feed(items):
     rss = ET.Element('rss', version='2.0')
     channel = ET.SubElement(rss, 'channel')
     for name, value in [('title', '네이버 광고 공지사항'), ('link', SOURCE),
-                        ('description', '첫 페이지에서 발견한 새 공지의 제목과 URL'), ('language', 'ko')]:
+                        ('description', '첫 페이지에서 발견한 공지의 제목, URL, 원문 작성일'), ('language', 'ko')]:
         ET.SubElement(channel, name).text = value
     for item in reversed(list(items.values())):
         node = ET.SubElement(channel, 'item')
         ET.SubElement(node, 'title').text = item['title']
         ET.SubElement(node, 'link').text = item['url']
         ET.SubElement(node, 'guid', isPermaLink='true').text = item['url']
-        # Stable discovery time; never regenerate timestamps on every poll.
-        ET.SubElement(node, 'pubDate').text = item['discovered_at']
+        source_date = item.get('source_date')
+        if source_date:
+            # The source provides a date only. Midnight KST is a conversion
+            # convention, not the actual time the notice was published.
+            published = datetime.strptime(source_date, '%Y-%m-%d').replace(
+                tzinfo=timezone(timedelta(hours=9)))
+            ET.SubElement(node, 'pubDate').text = format_datetime(published)
+            ET.SubElement(node, 'description').text = f'작성일: {source_date}'
+        else:
+            # Do not misrepresent discovery time as an original publication date.
+            ET.SubElement(node, 'description').text = '작성일: 확인되지 않음'
     ET.indent(rss)
     SITE.mkdir(exist_ok=True)
     ET.ElementTree(rss).write(SITE / 'rss.xml', encoding='utf-8', xml_declaration=True)
@@ -105,6 +124,9 @@ def main():
         if notice_id not in items:
             items[notice_id] = {**item, 'discovered_at': now}
             added += 1
+        else:
+            # Backfill original dates without changing GUIDs or notice titles.
+            items[notice_id]['source_date'] = item['source_date']
     write_feed(items)
     STATE.parent.mkdir(exist_ok=True)
     STATE.write_text(json.dumps(items, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
