@@ -149,7 +149,7 @@
   "35505": {
     "id": "35505",
     "title": "[안내] 네이버애즈 개인정보 안전성 확보조치 기준 적용 화면 추가 안내 (2026년 11월 25일 적용 예정)",
-    "source_date": "2026-11-18",
+    "source_date": "2026-11-20",
     "url": "https://ads.naver.com/notice/35505",
     "discovered_at": "Wed, 18 Nov 2026 05:48:09 GMT"
   },
@@ -173,5 +173,12 @@
     "source_date": "2026-11-18",
     "url": "https://ads.naver.com/notice/35577",
     "discovered_at": "Wed, 18 Nov 2026 09:42:03 GMT"
+  },
+  "35612": {
+    "id": "35612",
+    "title": "쇼핑검색광고/ADVoost 쇼핑 - 네이버 알림 지면 노출 확대",
+    "source_date": "2026-11-20",
+    "url": "https://ads.naver.com/notice/35612",
+    "discovered_at": "Fri, 20 Nov 2026 08:45:26 GMT"
   }
 }
