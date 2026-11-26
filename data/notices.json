@@ -194,5 +194,19 @@
     "source_date": "2026-11-24",
     "url": "https://ads.naver.com/notice/35672",
     "discovered_at": "Tue, 24 Nov 2026 08:12:58 GMT"
+  },
+  "35660": {
+    "id": "35660",
+    "title": "파워컨텐츠 UX 변경 안내",
+    "source_date": "2026-11-26",
+    "url": "https://ads.naver.com/notice/35660",
+    "discovered_at": "Thu, 26 Nov 2026 08:16:41 GMT"
+  },
+  "35690": {
+    "id": "35690",
+    "title": "[ADVoost 쇼핑] 통합검색 AI 브리핑 관련 상품 영역 노출 안내",
+    "source_date": "2026-11-26",
+    "url": "https://ads.naver.com/notice/35690",
+    "discovered_at": "Thu, 26 Nov 2026 08:16:41 GMT"
   }
 }
